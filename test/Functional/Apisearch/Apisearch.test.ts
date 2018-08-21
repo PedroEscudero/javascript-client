@@ -5,6 +5,7 @@ import {ImmutableConfig} from "../../../src/Config/ImmutableConfig";
 import {Item} from "../../../src/Model/Item";
 import {ItemUUID} from "../../../src/Model/ItemUUID";
 import {FILTER_MUST_ALL} from "../../../src/Query/Filter";
+import * as process from 'process';
 
 /**
  *
@@ -83,8 +84,6 @@ describe('Apisearch', () => {
             });
     });
 
-
-
     it('should create properly an item and make a complex query', async () => {
         repository.addItem(Item.create(
             ItemUUID.createByComposedUUID('1~item'),
@@ -118,5 +117,41 @@ describe('Apisearch', () => {
                 expect(result.getTotalItems()).to.be.equal(1);
                 expect(result.getTotalHits()).to.be.equal(1);
             });
+    });
+
+    it('should respect memory leaks', async () => {
+        let memory = process.memoryUsage();
+        console.log(memory);
+        let id = 0;
+        while (id < 10000) {
+            let idAsString = id.toString();
+            repository.addItem(Item.create(
+                ItemUUID.createByComposedUUID(idAsString + '~item'),
+                {
+                    'fieldn': 'value' + idAsString
+                },
+                {
+                    'category': [
+                        1, idAsString
+                    ]
+                },
+                {
+                    'name': 'This is my house number ' + idAsString,
+                    'body': "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
+                },
+                [
+                    idAsString
+                ]
+            ));
+
+            id++;
+        }
+
+        await repository.flush(500).then(function() {
+            global.gc();
+            let memory2 = process.memoryUsage();
+            console.log(memory2);
+            console.log(memory2.heapUsed - memory.heapUsed);
+        });
     });
 });

@@ -110,7 +110,7 @@ export abstract class Repository {
             return;
         }
 
-        return Promise.all(Repository
+        return await Promise.all(Repository
             .chunkArray(
                 this.itemsToUpdate,
                 bulkNumber,

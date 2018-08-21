@@ -11,6 +11,8 @@ import {Query} from "../../src/Query/Query";
 import {Changes} from "../../src/Model/Changes";
 import {ImmutableConfig} from "../../src/Config/ImmutableConfig";
 import {Config} from "../../src/Config/Config";
+import * as process from 'process';
+import * as memwatch from 'memwatch-next';
 
 describe('Repository/', () => {
     describe('HttpRepository', () => {
@@ -220,6 +222,48 @@ describe('Repository/', () => {
 
             expect(client.calls.length).to.be.equal(7);
             expect(counter).to.be.equal(7);
+        });
+
+        it('Respect memory leaks', async () => {
+            let client = new TestClient();
+            let repository = new HttpRepository(
+                client,
+                'aaa',
+                'bbb',
+                'xxx',
+                transformer
+            );
+
+            let memory = process.memoryUsage();
+            console.log(memory);
+            let i = 0;
+            let j = 0;
+            while (j < 20) {
+                while (i < 10000) {
+                    repository.addItem(Item.createFromArray({
+                        'uuid': {
+                            'id': i.toString(),
+                            'type': 'hola'
+                        },
+                        'metadata': {
+                            'hola': 'hola',
+                            'ciao': 'cioao',
+                        }
+                    }));
+                    i++;
+                }
+
+                await repository.flush(20);
+                i=0;
+                j++;
+            }
+
+            client.calls = [];
+            global.gc();
+            let memory2 = process.memoryUsage();
+            console.log(memory2);
+            console.log(memory2.heapUsed - memory.heapUsed);
+
         });
     });
 });

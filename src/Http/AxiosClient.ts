@@ -73,43 +73,34 @@ export class AxiosClient extends Client implements HttpClient {
             this.abort();
         }
 
-        return new Promise<Response> ((resolve, reject) => {
+        const headers = "get" == method
+            ? {}
+            : {
+                "Content-Encoding": "gzip",
+                "Content-Type": "application/json",
+            };
 
-            const headers = "get" == method
-                ? {}
-                : {
-                    "Content-Encoding": "gzip",
-                    "Content-Type": "application/json",
-                };
+        return await Axios
+            .request({
+                url: url + "?" + Client.objectToUrlParameters({
+                    ...credentials,
+                    ...parameters,
+                }),
+                data,
+                headers,
+                method,
+                baseURL: that.host.replace(/\/*$/g, ""),
+                timeout: that.timeout,
+                cancelToken: this.cancelToken.token,
+                transformRequest: [(data) => JSON.stringify(data)],
+            })
+            .then((axiosResponse) => {
 
-            //noinspection TypeScriptValidateTypes
-            Axios
-                .request({
-                    url: url + "?" + Client.objectToUrlParameters({
-                        ...credentials,
-                        ...parameters,
-                    }),
-                    data,
-                    headers,
-                    method,
-                    baseURL: that.host.replace(/\/*$/g, ""),
-                    timeout: that.timeout,
-                    cancelToken: this.cancelToken.token,
-                    transformRequest: [(data) => JSON.stringify(data)],
-                })
-                .then((axiosResponse) => {
-
-                    const response = new Response(
-                        axiosResponse.status,
-                        axiosResponse.data,
-                    );
-
-                    return resolve(response);
-                })
-                .catch(
-                    (thrown) => reject(thrown),
+                return new Response(
+                    axiosResponse.status,
+                    axiosResponse.data,
                 );
-        });
+            });
     }
 
     /**

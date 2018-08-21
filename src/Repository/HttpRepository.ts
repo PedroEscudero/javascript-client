@@ -169,8 +169,7 @@ export class HttpRepository extends Repository {
             .then((response) => {
                 HttpRepository.throwTransportableExceptionIfNeeded(response);
 
-                const result = Result.createFromArray(response.getBody());
-
+                let result = Result.createFromArray(response.getBody());
                 return Result.create(
                     result.getQuery(),
                     result.getTotalItems(),
