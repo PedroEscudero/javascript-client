@@ -12,7 +12,6 @@ import {Changes} from "../../src/Model/Changes";
 import {ImmutableConfig} from "../../src/Config/ImmutableConfig";
 import {Config} from "../../src/Config/Config";
 import * as process from 'process';
-import * as memwatch from 'memwatch-next';
 
 describe('Repository/', () => {
     describe('HttpRepository', () => {

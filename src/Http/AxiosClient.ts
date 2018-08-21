@@ -15,6 +15,7 @@ export class AxiosClient extends Client implements HttpClient {
     private timeout: number;
     private overrideQueries: boolean;
     private cancelToken;
+    private axios;
 
     /**
      * Constructor
@@ -41,6 +42,11 @@ export class AxiosClient extends Client implements HttpClient {
         this.cache = cache;
         this.overrideQueries = overrideQueries;
         this.cancelToken = Axios.CancelToken.source();
+        this.axios = Axios.create({
+            baseURL: host.replace(/\/*$/g, ""),
+            timeout: timeout,
+            transformRequest: [(data) => JSON.stringify(data)],
+        });
     }
 
     /**
@@ -61,7 +67,6 @@ export class AxiosClient extends Client implements HttpClient {
         parameters: any = {},
         data: any = {},
     ): Promise<Response> {
-        const that = this;
         url = url.replace(/^\/*|\/*$/g, "");
         url = "/" + (this.version + "/" + url).replace(/^\/*|\/*$/g, "");
         method = method.toLowerCase();
@@ -80,22 +85,18 @@ export class AxiosClient extends Client implements HttpClient {
                 "Content-Type": "application/json",
             };
 
-        return await Axios
-            .request({
-                url: url + "?" + Client.objectToUrlParameters({
+        return await this.axios.request(url + "?" + Client.objectToUrlParameters({
                     ...credentials,
                     ...parameters,
                 }),
-                data,
-                headers,
-                method,
-                baseURL: that.host.replace(/\/*$/g, ""),
-                timeout: that.timeout,
-                cancelToken: this.cancelToken.token,
-                transformRequest: [(data) => JSON.stringify(data)],
+            {
+                data: data,
+                headers: headers,
+                method: method
             })
             .then((axiosResponse) => {
-
+console.log(axiosResponse.request.path);
+console.log(axiosResponse.data);
                 return new Response(
                     axiosResponse.status,
                     axiosResponse.data,
